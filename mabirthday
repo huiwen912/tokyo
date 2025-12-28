@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2026 東京冬日親子自駕之旅</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #f8fafc;
+            scroll-behavior: smooth;
+        }
+        .snow-bg {
+            background: linear-gradient(to bottom, #e0f2fe, #ffffff);
+        }
+        .fuji-gradient {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+        }
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -9px;
+            top: 0;
+            width: 18px;
+            height: 18px;
+            background-color: #3b82f6;
+            border-radius: 50%;
+            border: 4px solid #fff;
+            z-index: 10;
+        }
+        .timeline-line {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background-color: #e2e8f0;
+        }
+        .card-hover:hover {
+            transform: translateY(-5px);
+            transition: all 0.3s ease;
+        }
+        .filter-btn.active {
+            background-color: #3b82f6;
+            color: white;
+        }
+        /* AI Assistant Styles */
+        #ai-sidebar {
+            transition: transform 0.3s ease-in-out;
+            transform: translateX(100%);
+        }
+        #ai-sidebar.open {
+            transform: translateX(0);
+        }
+        .dot-pulse {
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+    </style>
+</head>
+<body class="text-slate-800">
+
+    <!-- 頂部導覽列 -->
+    <nav class="fixed top-0 w-full bg-white/80 backdrop-blur-md shadow-sm z-50">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex justify-between items-center h-16">
+                <div class="text-xl font-bold text-blue-600 flex items-center">
+                    ❄️ 東京 2026 親子自駕
+                </div>
+                <div class="hidden md:flex space-x-6 items-center">
+                    <a href="#overview" class="hover:text-blue-500 transition">行程總覽</a>
+                    <a href="#transport" class="hover:text-blue-500 transition">交通住宿</a>
+                    <a href="#itinerary" class="hover:text-blue-500 transition">每日行程</a>
+                    <a href="#food" class="hover:text-blue-500 transition">美食地圖</a>
+                    <button onclick="toggleAISidebar()" class="bg-blue-600 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg hover:bg-blue-700 transition flex items-center gap-2">
+                        ✨ 智慧顧問
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero 區塊 -->
+    <header class="pt-32 pb-20 px-4 snow-bg text-center relative overflow-hidden">
+        <div class="max-w-4xl mx-auto relative z-10">
+            <h1 class="text-4xl md:text-6xl font-bold text-slate-900 mb-6">冬日富士．東京親子假期</h1>
+            <p class="text-lg md:text-xl text-slate-600 mb-8">2026/01/11 - 01/18 | 2大1小 (凱凱) | 孕媽咪友善行程</p>
+            <div class="flex justify-center flex-wrap gap-4">
+                <span class="bg-blue-100 text-blue-700 px-4 py-2 rounded-full text-sm font-medium">全程自駕</span>
+                <span class="bg-blue-100 text-blue-700 px-4 py-2 rounded-full text-sm font-medium">淺草連住</span>
+                <span class="bg-pink-100 text-pink-700 px-4 py-2 rounded-full text-sm font-medium">嚴禁牛肉</span>
+                <button onclick="generateDietaryCard()" class="bg-white border border-pink-200 text-pink-600 px-4 py-2 rounded-full text-sm font-bold shadow-sm hover:bg-pink-50 transition">
+                    ✨ 生成不吃牛溝通卡
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 行程總覽與圖表 -->
+    <section id="overview" class="py-16 max-w-7xl mx-auto px-4">
+        <h2 class="text-3xl font-bold text-center mb-12">📊 旅程數據分析</h2>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <div class="bg-white p-6 rounded-2xl shadow-lg">
+                <h3 class="text-xl font-bold mb-4 text-center">每日預估駕駛時數 (小時)</h3>
+                <canvas id="travelChart" height="250"></canvas>
+            </div>
+            <div class="space-y-6">
+                <div class="bg-blue-50 p-6 rounded-2xl">
+                    <h3 class="font-bold text-lg mb-2 text-blue-800">📅 航班資訊</h3>
+                    <div class="flex justify-between text-sm md:text-base">
+                        <div>
+                            <p class="font-bold">去程 CI104</p>
+                            <p>1/11 12:35 TPE ➔ 16:35 NRT</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-bold">回程 CI109</p>
+                            <p>1/18 19:30 NRT ➔ 22:45 TPE</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4 text-center">
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+                        <p class="text-slate-500 text-sm">住宿點</p>
+                        <p class="text-xl font-bold text-blue-600">淺草 Minn</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+                        <p class="text-slate-500 text-sm">交通工具</p>
+                        <p class="text-xl font-bold text-blue-600">8日租車</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 每日行程 -->
+    <section id="itinerary" class="py-16 max-w-5xl mx-auto px-4">
+        <h2 class="text-3xl font-bold text-center mb-12">🗓️ 8日精選行程</h2>
+        
+        <!-- Day 2 Example with AI Feature -->
+        <div class="mb-12">
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center space-x-4">
+                    <span class="bg-blue-600 text-white px-4 py-1 rounded-lg font-bold">Day 2</span>
+                    <span class="text-xl font-medium">1/12 (一) 江戶川親子日</span>
+                </div>
+                <button onclick="askAIFacts('江戶川自然動物園和摩天輪')" class="text-xs bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full border border-indigo-100 hover:bg-indigo-100 transition">
+                    ✨ 景點趣聞分享
+                </button>
+            </div>
+            <div class="relative ml-4 pl-8">
+                <div class="timeline-line"></div>
+                <div class="timeline-item relative mb-8">
+                    <p class="text-sm font-bold text-blue-600">09:30</p>
+                    <p class="font-bold">篠崎小馬樂園</p>
+                    <p class="text-sm text-slate-500 italic">凱凱體驗騎馬，孕媽咪在旁休息拍照</p>
+                </div>
+                <div class="timeline-item relative mb-8">
+                    <p class="text-sm font-bold text-blue-600">11:00</p>
+                    <p class="font-bold">江戶川自然動物園</p>
+                </div>
+                <div class="timeline-item relative mb-8">
+                    <p class="text-sm font-bold text-blue-600">13:00</p>
+                    <p class="font-bold">葛西臨海水族園 & 大摩天輪</p>
+                </div>
+                <div class="timeline-item relative">
+                    <p class="text-sm font-bold text-blue-600">17:30</p>
+                    <p class="font-bold text-orange-600">晚餐：相撲茶屋 寺尾 (兩國)</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Day 3 Example with AI Feature -->
+        <div class="mb-12">
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center space-x-4">
+                    <span class="bg-orange-500 text-white px-4 py-1 rounded-lg font-bold">Day 3</span>
+                    <span class="text-xl font-medium">1/13 (二) 爸爸生日．富士絕景</span>
+                </div>
+                <button onclick="askAIFacts('富士山和天上山公園的狸貓故事')" class="text-xs bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full border border-indigo-100 hover:bg-indigo-100 transition">
+                    ✨ 講個故事給凱凱聽
+                </button>
+            </div>
+            <div class="relative ml-4 pl-8">
+                <div class="timeline-line"></div>
+                <div class="timeline-item relative mb-8">
+                    <p class="text-sm font-bold text-blue-600">10:00</p>
+                    <p class="font-bold">河口淺間神社 (天空鳥居)</p>
+                </div>
+                <div class="timeline-item relative mb-8">
+                    <p class="text-sm font-bold text-blue-600">14:00</p>
+                    <p class="font-bold">天上山公園全景纜車</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 查看更多行程 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
+            <div class="bg-white p-4 rounded-xl border-l-4 border-blue-400 shadow-sm flex justify-between items-center">
+                <div>
+                    <p class="font-bold text-sm">Day 4: 埼玉鐵道之旅</p>
+                    <p class="text-xs text-slate-500">大宮鐵道博 ➔ 採草莓 ➔ 蠟筆小新</p>
+                </div>
+                <button onclick="askAIFacts('大宮鐵道博物館')" class="text-[10px] bg-blue-50 text-blue-600 px-2 py-1 rounded-full">✨ 趣聞</button>
+            </div>
+            <div class="bg-white p-4 rounded-xl border-l-4 border-blue-400 shadow-sm flex justify-between items-center">
+                <div>
+                    <p class="font-bold text-sm">Day 5: 吉卜力幻想日</p>
+                    <p class="text-xs text-slate-500">吉卜力 ➔ 多摩六都科學館</p>
+                </div>
+                <button onclick="askAIFacts('吉卜力美術館的龍貓巴士')" class="text-[10px] bg-blue-50 text-blue-600 px-2 py-1 rounded-full">✨ 趣聞</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- 美食地圖 -->
+    <section id="food" class="py-16 bg-slate-50">
+        <div class="max-w-7xl mx-auto px-4 text-center">
+            <h2 class="text-3xl font-bold mb-4">🍽️ 非牛肉美食地圖</h2>
+            <button onclick="askAISuggestion('請推薦淺草附近更多不含牛肉的親子友善餐飲')" class="mb-8 inline-flex items-center gap-2 bg-white text-blue-600 px-6 py-2 rounded-full border border-blue-100 shadow-sm hover:shadow-md transition font-bold">
+                ✨ 讓 AI 推薦更多無牛美食
+            </button>
+            
+            <div class="flex justify-center flex-wrap gap-2 mb-10">
+                <button onclick="filterFood('all')" class="filter-btn active px-6 py-2 rounded-full border border-blue-400 font-medium">全部</button>
+                <button onclick="filterFood('seafood')" class="filter-btn px-6 py-2 rounded-full border border-blue-400 font-medium">海鮮/火鍋</button>
+                <button onclick="filterFood('pork')" class="filter-btn px-6 py-2 rounded-full border border-blue-400 font-medium">豬肉/丼飯</button>
+            </div>
+            
+            <div id="foodGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-left">
+                <!-- 餐廳資料保持原樣 -->
+                <div class="food-card bg-white rounded-2xl shadow-sm p-6" data-type="seafood">
+                    <span class="bg-blue-100 text-blue-600 text-xs px-2 py-1 rounded">海鮮/火鍋</span>
+                    <h3 class="text-xl font-bold mt-2">相撲茶屋 寺尾</h3>
+                    <p class="text-slate-600 text-sm my-3 italic">推薦：雞肉丸相撲火鍋</p>
+                    <a href="https://www.google.com/maps/search/?api=1&query=Chanko+Terao+Ryogoku" target="_blank" class="text-blue-500 text-sm font-bold">Google Maps →</a>
+                </div>
+                <div class="food-card bg-white rounded-2xl shadow-sm p-6" data-type="pork">
+                    <span class="bg-green-100 text-green-600 text-xs px-2 py-1 rounded">豬肉/丼飯</span>
+                    <h3 class="text-xl font-bold mt-2">十勝亭 豚丼</h3>
+                    <p class="text-slate-600 text-sm my-3 italic">推薦：炭烤豬肉蓋飯</p>
+                    <a href="https://www.google.com/maps/search/?api=1&query=十勝亭+春日部" target="_blank" class="text-blue-500 text-sm font-bold">Google Maps →</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- AI 智慧顧問側邊欄 -->
+    <div id="ai-sidebar" class="fixed top-0 right-0 h-full w-full md:w-96 bg-white shadow-2xl z-[60] flex flex-col">
+        <div class="p-6 fuji-gradient text-white flex justify-between items-center">
+            <div>
+                <h3 class="text-xl font-bold">✨ AI 旅遊顧問</h3>
+                <p class="text-xs opacity-80">專為凱凱一家設計的智慧助手</p>
+            </div>
+            <button onclick="toggleAISidebar()" class="text-white text-2xl">&times;</button>
+        </div>
+        <div id="ai-messages" class="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50 text-sm">
+            <div class="bg-blue-100 p-3 rounded-lg text-blue-800">
+                您好！我是您的旅遊顧問。有關於這 8 天行程的任何疑問，或需要即時建議（如天氣對策、更多美食推薦），都可以問我喔！
+            </div>
+        </div>
+        <div class="p-4 border-t bg-white">
+            <div class="flex gap-2">
+                <input type="text" id="ai-input" placeholder="問問顧問..." class="flex-1 border rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <button onclick="sendMessage()" class="bg-blue-600 text-white p-2 rounded-full hover:bg-blue-700">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="ArrowUp"></path><path d="M5 10l7-7m0 0l7 7m-7-7v18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI 溝通卡 Modal -->
+    <div id="modal-backdrop" class="fixed inset-0 bg-black/50 z-[100] hidden items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl relative">
+            <button onclick="closeModal()" class="absolute top-4 right-4 text-slate-400">&times;</button>
+            <div id="modal-content" class="text-center">
+                <!-- AI Content will be injected here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 頁尾 -->
+    <footer class="py-12 bg-slate-900 text-slate-400 text-center">
+        <p class="mb-4">祝凱凱家 2026 東京之旅圓滿順利！❄️</p>
+        <p class="text-xs">Powered by Gemini 2.5 AI | Professional Travel Planning</p>
+    </footer>
+
+    <script>
+        const apiKey = "";
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'tokyo-trip-2026';
+
+        // Gemini API 呼叫函數 (含重試機制)
+        async function callGemini(prompt, systemInstruction = "") {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+            const payload = {
+                contents: [{ parts: [{ text: prompt }] }],
+                systemInstruction: { parts: [{ text: systemInstruction }] }
+            };
+
+            let delay = 1000;
+            for (let i = 0; i < 5; i++) {
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (!response.ok) throw new Error('API Error');
+                    const data = await response.json();
+                    return data.candidates?.[0]?.content?.parts?.[0]?.text;
+                } catch (error) {
+                    if (i === 4) throw error;
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    delay *= 2;
+                }
+            }
+        }
+
+        // AI 側邊欄控制
+        function toggleAISidebar() {
+            document.getElementById('ai-sidebar').classList.toggle('open');
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('ai-input');
+            const text = input.value.trim();
+            if (!text) return;
+
+            addMessage(text, 'user');
+            input.value = '';
+
+            const loadingId = addMessage('正在思考中...', 'ai', true);
+            
+            const systemPrompt = "你是一位專業的東京旅遊規劃師。現在你正在為凱凱一家（2大1小，含孕婦與4歲男童）提供建議。這份行程是 8 天 7 夜，住宿在淺草 Minn，全程自駕。最重要的規則是：爸爸媽媽絕對不吃牛肉。請基於這些背景提供溫暖、實用且安全的建議。";
+            
+            try {
+                const response = await callGemini(text, systemPrompt);
+                removeLoading(loadingId);
+                addMessage(response, 'ai');
+            } catch (error) {
+                removeLoading(loadingId);
+                addMessage('抱歉，顧問暫時連不上線，請稍後再試。', 'ai');
+            }
+        }
+
+        function addMessage(text, sender, isLoading = false) {
+            const container = document.getElementById('ai-messages');
+            const div = document.createElement('div');
+            div.className = sender === 'user' ? 'bg-blue-600 text-white p-3 rounded-lg ml-8 self-end' : 'bg-white p-3 rounded-lg mr-8 shadow-sm border border-slate-100 self-start';
+            if (isLoading) div.classList.add('dot-pulse');
+            div.innerText = text;
+            const id = 'msg-' + Date.now();
+            div.setAttribute('id', id);
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+            return id;
+        }
+
+        function removeLoading(id) {
+            const el = document.getElementById(id);
+            if (el) el.remove();
+        }
+
+        // ✨ 景點深度解析
+        async function askAIFacts(location) {
+            openModal('<p class="text-blue-600 animate-pulse">正在為凱凱探索有趣的小故事...</p>');
+            const prompt = `請針對「${location}」這個景點，提供 2-3 個適合講給 4 歲小孩聽的有趣小知識或故事。語氣要親切、像在說故事。`;
+            const systemPrompt = "你是一位說故事高手，專門為小孩解釋景點趣聞。";
+            
+            try {
+                const response = await callGemini(prompt, systemPrompt);
+                openModal(`
+                    <h3 class="text-xl font-bold mb-4">✨ ${location} 的小秘密</h3>
+                    <div class="text-left text-slate-600 space-y-4 leading-relaxed">
+                        ${response.split('\n').map(line => `<p>${line}</p>`).join('')}
+                    </div>
+                    <button onclick="closeModal()" class="mt-8 bg-blue-600 text-white px-6 py-2 rounded-full font-bold">我知道了！</button>
+                `);
+            } catch (error) {
+                openModal('<p class="text-red-500">抱歉，故事書被風吹亂了，請再試一次。</p>');
+            }
+        }
+
+        // ✨ 日文溝通小幫手
+        async function generateDietaryCard() {
+            openModal('<p class="text-pink-600 animate-pulse">正在製作日文溝通字卡...</p>');
+            const prompt = "請製作一份日文溝通字卡。內容：我們有兩位大人不吃牛肉（包括肉塊、高湯、牛油、醬汁）。我們有一位孕婦。請用有禮貌且清晰的日文表達，並附上中文對照。";
+            
+            try {
+                const response = await callGemini(prompt, "你是一位專業翻譯，擅長日本餐廳點餐溝通。");
+                openModal(`
+                    <div class="bg-pink-50 p-6 rounded-2xl border-2 border-pink-200">
+                        <h3 class="text-xl font-bold text-pink-700 mb-4">飲食需求溝通卡</h3>
+                        <div class="text-left text-lg font-medium leading-relaxed mb-6">
+                            ${response.replace(/\n/g, '<br>')}
+                        </div>
+                        <p class="text-xs text-slate-400">請直接向餐廳人員出示此畫面</p>
+                    </div>
+                    <button onclick="closeModal()" class="mt-6 text-slate-500 underline">關閉</button>
+                `);
+            } catch (error) {
+                openModal('<p class="text-red-500">字卡製作失敗，請檢查網路連線。</p>');
+            }
+        }
+
+        // ✨ 智慧餐點建議
+        async function askAISuggestion(query) {
+            toggleAISidebar();
+            const input = document.getElementById('ai-input');
+            input.value = query;
+            sendMessage();
+        }
+
+        // Modal 控制
+        function openModal(content) {
+            const backdrop = document.getElementById('modal-backdrop');
+            const inner = document.getElementById('modal-content');
+            inner.innerHTML = content;
+            backdrop.classList.remove('hidden');
+            backdrop.classList.add('flex');
+        }
+
+        function closeModal() {
+            const backdrop = document.getElementById('modal-backdrop');
+            backdrop.classList.add('hidden');
+            backdrop.classList.remove('flex');
+        }
+
+        // 初始化圖表
+        window.onload = function() {
+            const ctx = document.getElementById('travelChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7', 'D8'],
+                    datasets: [{
+                        label: '預估駕駛時數 (H)',
+                        data: [1.5, 1, 4, 3, 1.5, 3.5, 1, 1.5],
+                        backgroundColor: '#3b82f6',
+                        borderRadius: 8,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true, max: 5 } },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        };
+
+        // 美食過濾功能
+        function filterFood(category) {
+            const cards = document.querySelectorAll('.food-card');
+            const btns = document.querySelectorAll('.filter-btn');
+            btns.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            cards.forEach(card => {
+                if (category === 'all' || card.getAttribute('data-type') === category) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+    </script>
+</body>
+</html>
